@@ -1,6 +1,6 @@
 """Math utilities for the simulation."""
 
-from typing import Tuple
+from typing import List, Tuple
 
 
 def normalize_to_range(
@@ -27,3 +27,39 @@ def normalize_to_range(
     denominator = dataset_upper_bound - dataset_lower_bound
 
     return multiplier * numerator / denominator + lower_bound
+
+
+def _get_neighbors(x: int, y: int, dataset: List[List[float]]) -> List[Tuple[int, int]]:
+    """Gets the neighbors of dataset[y][x] in a 3x3 kernel.
+
+    Args:
+        x (int): Row
+        y (int): Column
+        dataset (list of lists): A 2D list representing the dataset
+
+    Returns:
+        list of tuples: Each tuple contains indices of a particular neighbor
+    """
+    neighbors = []
+    neighbors.extend(dataset[y - 1][x - 1 : x + 2])
+    neighbors.extend([dataset[y][x - 1], dataset[y][x + 1]])
+    neighbors.extend(dataset[y + 1][x - 1 : x + 2])
+
+    return neighbors
+
+
+def apply_mean_filter(indices: Tuple[int, int], dataset: List[List[float]]):
+    """Applies mean filter to the value at given `indices`.
+
+    Args:
+        indices (tuple): Indices of the value to apply the mean filter to
+        dataset (list of lists): A 2D list representing the dataset
+
+    Returns:
+        float: Value after applying the mean filter"""
+    neighbors = _get_neighbors(*indices, dataset)
+
+    x, y = indices
+    value_to_mean_filter = dataset[y][x]
+
+    return (value_to_mean_filter + sum(neighbors)) / (len(neighbors) + 1)
