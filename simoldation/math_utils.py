@@ -40,10 +40,28 @@ def _get_neighbors(x: int, y: int, dataset: List[List[float]]) -> List[Tuple[int
     Returns:
         list of tuples: Each tuple contains indices of a particular neighbor
     """
+    width = len(dataset[0])
+    height = len(dataset)
+
+    # These hacks ensure that we don't throw an index error.
+    if x == width - 1:
+        x = -1
+    if y == height - 1:
+        y = -1
+
     neighbors = []
-    neighbors.extend(dataset[y - 1][x - 1 : x + 2])
-    neighbors.extend([dataset[y][x - 1], dataset[y][x + 1]])
-    neighbors.extend(dataset[y + 1][x - 1 : x + 2])
+    neighbors.extend(
+        [
+            dataset[y - 1][x - 1],
+            dataset[y - 1][x],
+            dataset[y - 1][x + 1],
+            dataset[y][x - 1],
+            dataset[y][x + 1],
+            dataset[y + 1][x - 1],
+            dataset[y + 1][x],
+            dataset[y + 1][x + 1],
+        ]
+    )
 
     return neighbors
 
