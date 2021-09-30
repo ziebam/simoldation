@@ -21,7 +21,6 @@ from simoldation.math_utils import apply_mean_filter, normalize_to_range, pbcs
 def test_normalize_to_range(
     test_value, test_range, test_dataset_lower_bound, test_dataset_upper_bound, expected
 ):
-    """Tests the `normalize_to_range` function."""
     assert (
         normalize_to_range(
             test_value, test_range, test_dataset_lower_bound, test_dataset_upper_bound
@@ -50,5 +49,4 @@ def test_pbcs(test_value, test_boundary, expected):
     ],
 )
 def test_apply_mean_filter(test_indices, test_dataset, expected):
-    """Tests the `apply_mean_filter function."""
     assert apply_mean_filter(test_indices, test_dataset) == expected
