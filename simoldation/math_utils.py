@@ -29,6 +29,24 @@ def normalize_to_range(
     return multiplier * numerator / denominator + lower_bound
 
 
+def pbcs(index: int, boundary: int) -> int:
+    """Applies periodic boundary conditions (PBCs).
+
+    Args:
+        index (int): Index to apply the PBCs to
+        boundary (int): Length of the boundary
+
+    Returns:
+        int: Index with PBCs applied to it
+    """
+    if index < 0:
+        index += boundary
+    elif index >= boundary:
+        index -= boundary
+
+    return index
+
+
 def _get_neighbors(x: int, y: int, dataset: List[List[float]]) -> List[Tuple[int, int]]:
     """Gets the neighbors of dataset[y][x] in a 3x3 kernel.
 
