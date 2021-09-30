@@ -1,7 +1,7 @@
 """Tests for the `math_utils.py` module."""
 
 import pytest
-from simoldation.math_utils import apply_mean_filter, normalize_to_range
+from simoldation.math_utils import apply_mean_filter, normalize_to_range, pbcs
 
 
 @pytest.mark.parametrize(
@@ -28,6 +28,14 @@ def test_normalize_to_range(
         )
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    ("test_value", "test_boundary", "expected"),
+    [(-1, 100, 99), (100, 100, 0), (-10, 100, 90), (110, 100, 10)],
+)
+def test_pbcs(test_value, test_boundary, expected):
+    assert pbcs(test_value, test_boundary) == expected
 
 
 @pytest.mark.parametrize(
