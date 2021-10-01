@@ -9,30 +9,29 @@ from moderngl import POINTS, PROGRAM_POINT_SIZE
 
 class Simoldation(mglw.WindowConfig):
     gl_version = (3, 3)
-    window_size = viewpoint_width, viewpoint_height = (200, 200)
+    window_size = viewport_width, viewport_height = (200, 200)
 
-    framework_size = viewpoint_width * viewpoint_height
+    framework_size = viewport_width * viewport_height
 
     population_percentage = 0.03
-    population_size = round(population_percentage * framework_size)
+    population = round(population_percentage * framework_size)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.datamap = [
-            [None for _ in range(self.viewpoint_width)]
-            for _ in range(self.viewpoint_height)
+            [None for _ in range(self.viewport_width)]
+            for _ in range(self.viewport_height)
         ]
         self.trailmap = [
-            [0 for _ in range(self.viewpoint_width)]
-            for _ in range(self.viewpoint_height)
+            [0 for _ in range(self.viewport_width)] for _ in range(self.viewport_height)
         ]
 
-        for _ in range(self.population_size):
-            x = random.randint(0, self.viewpoint_width - 1)
-            y = random.randint(0, self.viewpoint_height - 1)
+        for _ in range(self.population):
+            x = random.randint(0, self.viewport_width - 1)
+            y = random.randint(0, self.viewport_height - 1)
 
-            self.datamap[y][x] = Agent((y, x))
+            self.datamap[y][x] = Agent(y, x)
 
         self.trailmap_prog = self.ctx.program(
             vertex_shader="""
@@ -62,12 +61,24 @@ class Simoldation(mglw.WindowConfig):
     def render(self, time, frametime):
         self.ctx.enable_only(PROGRAM_POINT_SIZE)
 
-        trails = [0, 0, 0, 0, 0]
+        for row in self.datamap:
+            for cell in row:
+                if cell is not None:
+                    cell.motor_stage(self.datamap, self.trailmap)
+                    cell.sensory_stage(self.trailmap)
+
         for y, row in enumerate(self.trailmap):
             for x, trail in enumerate(row):
                 if trail > 0:
-                    trail_x = normalize_to_range(x, (-1, 1), 0, self.viewpoint_width)
-                    trail_y = normalize_to_range(y, (-1, 1), 0, self.viewpoint_height)
+                    self.trailmap[y][x] -= 1
+                self.trailmap[y][x] = apply_mean_filter((x, y), self.trailmap)
+
+        trails = []
+        for y, row in enumerate(self.trailmap):
+            for x, trail in enumerate(row):
+                if trail > 0:
+                    trail_x = normalize_to_range(x, (-1, 1), 0, self.viewport_width)
+                    trail_y = normalize_to_range(y, (-1, 1), 0, self.viewport_height)
                     trail_rgb = normalize_to_range(trail, (0, 1), 0, 255)
 
                     trails.append(trail_x)
@@ -84,19 +95,7 @@ class Simoldation(mglw.WindowConfig):
 
         self.trailmap_vao.render(mode=POINTS)
 
-        for row in self.datamap:
-            for cell in row:
-                if cell is not None:
-                    cell.attempt_to_move_forward(self.datamap, self.trailmap)
-                    cell.sensory_stage(self.trailmap)
-
-        for y, row in enumerate(self.trailmap[1:-1]):
-            for x, trail in enumerate(row[1:-1]):
-                if trail > 0:
-                    self.trailmap[y][x] -= 1
-                self.trailmap[y][x] = apply_mean_filter((x, y), self.trailmap)
-
-    def key_event(self, key, action, modifiers):
+    def key_event(self, key, action, _):
         if action == self.wnd.keys.ACTION_PRESS:
             if key == self.wnd.keys.ESCAPE:
                 self.wnd.close()
