@@ -29,7 +29,7 @@ def normalize_to_range(
     return multiplier * numerator / denominator + lower_bound
 
 
-def pbcs(index: int, boundary: int) -> int:
+def apply_pbcs(index: int, boundary: int) -> int:
     """Applies periodic boundary conditions (PBCs).
 
     Args:
