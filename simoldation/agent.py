@@ -1,105 +1,87 @@
 import math
 import random
 
+from math_utils import apply_pbcs
+
 
 class Agent:
     def __init__(
         self,
-        position,
+        pos_x,
+        pos_y,
         sensor_angle=math.pi / 4,
         rotation_angle=math.pi / 4,
         sensor_offset=9,
-        sensor_width=1,
         step_size=1,
         chemoattractant_deposition=5,
     ):
-        self.position = self.pos_x, self.pos_y = position
-        self.orientation = random.random() * 2 * math.pi
+        # TODO Docstring.
+        self.pos_x, self.pos_y = pos_x, pos_y
         self.sensor_angle = sensor_angle
         self.rotation_angle = rotation_angle
         self.sensor_offset = sensor_offset
-        self.sensor_width = sensor_width
         self.step_size = step_size
         self.chemoattractant_deposition = chemoattractant_deposition
 
-    def attempt_to_move_forward(self, datamap, trailmap):
-        target_x = round(self.pos_x + math.cos(self.orientation))
-        if target_x >= len(datamap[0]) or target_x < 0:
-            target_x = self.pos_x
+        self.orientation = 2 * math.pi * random.random()
 
-        target_y = round(self.pos_y + math.sin(self.orientation))
-        if target_y >= len(datamap) or target_y < 0:
-            target_y = self.pos_y
+    def motor_stage(self, datamap, trailmap):
+        # TODO Docstring.
+        width = len(datamap[0])
+        height = len(datamap)
 
-        if self.pos_x == target_x and self.pos_y == target_y:
-            self.orientation = random.random() * 2 * math.pi
+        target_x = round(self.pos_x + self.step_size * math.cos(self.orientation))
+        target_y = round(self.pos_y + self.step_size * math.sin(self.orientation))
+
+        target_x = apply_pbcs(target_x, width)
+        target_y = apply_pbcs(target_y, height)
+
         if datamap[target_y][target_x] is None:
             datamap[self.pos_y][self.pos_x] = None
-            self.position = self.pos_x, self.pos_y = target_x, target_y
             datamap[target_y][target_x] = self
-            trailmap[target_y][target_x] += (
-                self.chemoattractant_deposition
-                if trailmap[target_y][target_x] <= 250
-                else 0
-            )
+            self.pos_x, self.pos_y = target_x, target_y
+
+            if trailmap[target_y][target_x] <= 250:
+                trailmap[target_y][target_x] += self.chemoattractant_deposition
         else:
-            self.orientation = random.random() * 2 * math.pi
+            self.orientation = 2 * math.pi * random.random()
 
     def sensory_stage(self, trailmap):
-        f_x = round(self.pos_x + self.sensor_offset * math.cos(self.orientation))
-        f_y = round(self.pos_y + self.sensor_offset * math.sin(self.orientation))
+        # TODO Docstring.
+        width = len(trailmap[0])
+        height = len(trailmap)
 
-        fl_x = round(
-            self.pos_x
-            + self.sensor_offset * math.cos(self.orientation - self.rotation_angle)
-        )
-        fl_y = round(
-            self.pos_y
-            + self.sensor_offset * math.sin(self.orientation - self.rotation_angle)
-        )
+        front_x = round(self.pos_x + self.sensor_offset * math.cos(self.orientation))
+        front_y = round(self.pos_y + self.sensor_offset * math.sin(self.orientation))
 
-        fr_x = round(
-            self.pos_x
-            + self.sensor_offset * math.cos(self.orientation + self.rotation_angle)
+        angle_counterclockwise = self.orientation - self.rotation_angle
+        left_x = round(
+            self.pos_x + self.sensor_offset * math.cos(angle_counterclockwise)
         )
-        fr_y = round(
-            self.pos_y
-            + self.sensor_offset * math.sin(self.orientation + self.rotation_angle)
+        left_y = round(
+            self.pos_y + self.sensor_offset * math.sin(angle_counterclockwise)
         )
 
-        if f_x >= len(trailmap[0]) or f_x < 0 or f_y >= len(trailmap) or f_y < 0:
-            f = 0
-        else:
-            f = trailmap[f_y][f_x]
+        angle_clockwise = self.orientation + self.rotation_angle
+        right_x = round(self.pos_x + self.sensor_offset * math.cos(angle_clockwise))
+        right_y = round(self.pos_y + self.sensor_offset * math.sin(angle_clockwise))
 
-        if fl_x >= len(trailmap[0]) or fl_x < 0 or fl_y >= len(trailmap) or fl_y < 0:
-            fl = 0
-        else:
-            fl = trailmap[fl_y][fl_x]
+        front_x = apply_pbcs(front_x, width)
+        front_y = apply_pbcs(front_y, height)
+        left_x = apply_pbcs(left_x, width)
+        left_y = apply_pbcs(left_y, height)
+        right_x = apply_pbcs(right_x, width)
+        right_y = apply_pbcs(right_y, height)
 
-        if fr_x >= len(trailmap[0]) or fr_x < 0 or fr_y >= len(trailmap) or fr_y < 0:
-            fr = 0
-        else:
-            fr = trailmap[fr_y][fr_x]
+        front_sample = trailmap[front_y][front_x]
+        left_sample = trailmap[left_y][left_x]
+        right_sample = trailmap[right_y][right_x]
 
-        if f < fl and f < fr:
+        if front_sample < left_sample and front_sample < right_sample:
             self.orientation += self.rotation_angle * (
                 1 if random.random() < 0.5 else -1
             )
-        elif fl < fr:
+        elif left_sample < right_sample:
             self.orientation += self.rotation_angle
-        elif fr < fl:
+        elif right_sample < left_sample:
             self.orientation += -self.rotation_angle
-
-
-# if __name__ == "__main__":
-#     datamap = [[None for _ in range(10)] for _ in range(10)]
-#     trailmap = [[0 for _ in range(10)] for _ in range(10)]
-
-#     agent = Agent((5, 5))
-#     datamap[5][5] = agent
-#     print(datamap)
-#     print(trailmap)
-#     agent.attempt_to_move_forward(datamap, trailmap)
-#     print(datamap)
-#     print(trailmap)
